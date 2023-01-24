@@ -1,6 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: |
-
+Description: Cloudformation Template to create AWS a DynamoDB Table with the billing mode On-demand.
 Parameters:
   TableName:
     Description: Table name
@@ -17,7 +16,7 @@ Parameters:
     Description: Valid values are S(String), N(Number), B(Boolean)
     Type: String
     Default: S
-    AllowedValues: 
+    AllowedValues:
       - S
       - N
       - B

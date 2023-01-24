@@ -1,6 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: |
-
+Description: Cloudformation Template to create AWS a DynamoDB Table with the billing mode Provisioned read and write throughput.
 Parameters:
   TableName:
     Description: Table name
@@ -17,23 +16,23 @@ Parameters:
     Description: Valid values are S(String), N(Number), B(Boolean)
     Type: String
     Default: S
-    AllowedValues: 
+    AllowedValues:
       - S
       - N
       - B
   ReadCapacityUnits:
     Description: Provisioned read throughput
     Type: Number
-    Default: '5'
-    MinValue: '5'
-    MaxValue: '10000'
+    Default: "5"
+    MinValue: "5"
+    MaxValue: "10000"
     ConstraintDescription: must be between 5 and 10000
   WriteCapacityUnits:
     Description: Provisioned write throughput
     Type: Number
-    Default: '10'
-    MinValue: '5'
-    MaxValue: '10000'
+    Default: "10"
+    MinValue: "5"
+    MaxValue: "10000"
     ConstraintDescription: must be between 5 and 10000
 
 Resources:
@@ -49,8 +48,8 @@ Resources:
           KeyType: HASH
       BillingMode: PROVISIONED
       ProvisionedThroughput:
-        ReadCapacityUnits: !Ref 'ReadCapacityUnits'
-        WriteCapacityUnits: !Ref 'WriteCapacityUnits'
+        ReadCapacityUnits: !Ref "ReadCapacityUnits"
+        WriteCapacityUnits: !Ref "WriteCapacityUnits"
 Outputs:
   TableName:
     Value: !Ref "DynamoDBTable"
