@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: AWS CloudFormation Sample Template VPC_Basic_template.template.
+Parameters:
+  DynamoDBTableName:
+    Type: String
+  TemplateURL:
+    Description: URL of the nested stack template
+    Type: String
+  GraphQLAPIName:
+    Type: String
+  UserPoolId:
+    Type: String
+  UserPoolAWSRegion:
+    Type: String
+Resources:
+  AppSyncAPIStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Ref TemplateURL
+      Parameters:
+        GraphQLAPIName: !Ref GraphQLAPIName
+        UserPoolId: !Ref UserPoolId
+        UserPoolAWSRegion: !Ref UserPoolAWSRegion
+      TimeoutInMinutes: 5
+
+  DynamoDBTableDataSource:
+    Type: "AWS::AppSync::DataSource"
+    Properties:
+      ApiId: !GetAtt AppSyncAPIStack.Outputs.GraphQLApiId
+      Name: !Ref DynamoDBTableName
+      Description: The DynamoDB table source
+      Type: AMAZON_DYNAMODB
+      ServiceRoleArn: "arn:aws:iam::809489680864:role/AppSyncTutorialAmazonDynamoDBRole"
+      DynamoDBConfig:
+        AwsRegion: "us-east-1"
+        TableName: "AppSync-Lab"
+
+  GraphQLSchema:
+    Type: "AWS::AppSync::GraphQLSchema"
+    Properties:
+      ApiId: !GetAtt AppSyncAPIStack.Outputs.GraphQLApiId
+      DefinitionS3Location: "s3://bucket-809489680864/proyecto1-graphql-schema/schema.graphql"

@@ -1,0 +1,29 @@
+Parameters:
+  GraphQLAPIName:
+    Type: String
+  UserPoolId:
+    Type: String
+  UserPoolAWSRegion:
+    Type: String
+
+Resources:
+  GraphQLApi:
+    Type: AWS::AppSync::GraphQLApi
+    Properties:
+      AuthenticationType: "AMAZON_COGNITO_USER_POOLS"
+      Name: !Ref GraphQLAPIName
+      UserPoolConfig:
+        UserPoolId: !Ref UserPoolId
+        AwsRegion: !Ref UserPoolAWSRegion
+        DefaultAction: ALLOW
+
+Outputs:
+  GraphQLApiARN:
+    Description: The App ID of the GraphQL endpoint.
+    Value: !Ref GraphQLApi
+  GraphQLApiId:
+    Description: The App ID of the GraphQL endpoint.
+    Value: !GetAtt GraphQLApi.ApiId
+  GraphQLApiEndpoint:
+    Description: The URL for the GraphQL endpoint.
+    Value: !GetAtt GraphQLApi.GraphQLUrl
