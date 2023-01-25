@@ -41,6 +41,17 @@ Resources:
       HostedZoneConfig: 
         Comment: Public Host zoned for S3 website
       Name: !Ref HostedZone
+  Route53RecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: !Ref HostedZone
+      Type: A
+      AliasTarget:
+        HostedZoneId: Z2FDTNDATAQYW2
+        DNSName: example.com
+      HostedZoneId: 
+        Fn::ImportValue:
+          !Sub ${CloudFrontDistribution}-HostedZoneId
 
   S3BucketWebsiteContent:
     Type: AWS::S3::Bucket
@@ -49,71 +60,51 @@ Resources:
       WebsiteConfiguration:
         IndexDocument: index.html
         ErrorDocument: error.html
-  CloudFrontDistribution:
-    Type: AWS::CloudFront::Distribution
-    Properties:
-      DistributionConfig:
-        Comment: CDN for S3-backed website
-        Aliases:
-          - !Join [
-              "",
-              [
-                !Ref "AWS::StackName",
-                !Ref "AWS::AccountId",
-                .,
-                !Ref "AWS::Region",
-                .,
-                !Ref "HostedZone",
-              ],
-            ]
-        Enabled: "true"
-        DefaultCacheBehavior:
-          ForwardedValues:
-            QueryString: "true"
-          TargetOriginId: only-origin
-          ViewerProtocolPolicy: allow-all
-        ViewerCertificate:
-          AcmCertificateArn: arn:aws:acm:us-east-1:809489680864:certificate/540970d9-3fa5-4904-a28c-f4493fb9de27
-          SslSupportMethod: sni-only
-        DefaultRootObject: index.html
-        Origins:
-          - CustomOriginConfig:
-              HTTPPort: "80"
-              HTTPSPort: "443"
-              OriginProtocolPolicy: http-only
-            DomainName:
-              !Join [
-                "",
-                [
-                  !Ref "S3BucketWebsiteContent",
-                  !FindInMap [
-                    Region2S3WebsiteSuffix,
-                    !Ref "AWS::Region",
-                    Suffix,
-                  ],
-                ],
-              ]
-            Id: only-origin
-  Route53RecordDNSName:
-    Type: AWS::Route53::RecordSet
-    DependsOn: Route53HostedZone
-    Properties:
-      HostedZoneName: !Join ['', [!Ref 'HostedZone', .]]
-      Comment: CNAME redirect custom name to CloudFront distribution
-      Name:
-        !Join [
-          "",
-          [
-            !Ref "AWS::StackName",
-            !Ref "AWS::AccountId",
-            .,
-            !Ref "AWS::Region",
-            .,
-            !Ref "HostedZone",
-          ],
-        ]
-      Type: CNAME
-      TTL: "900"
+  # CloudFrontDistribution:
+  #   Type: AWS::CloudFront::Distribution
+  #   Properties:
+  #     DistributionConfig:
+  #       Comment: CDN for S3-backed website
+  #       Aliases:
+  #         - !Join [
+  #             "",
+  #             [
+  #               !Ref "AWS::StackName",
+  #               !Ref "AWS::AccountId",
+  #               .,
+  #               !Ref "AWS::Region",
+  #               .,
+  #               !Ref "HostedZone",
+  #             ],
+  #           ]
+  #       Enabled: "true"
+  #       DefaultCacheBehavior:
+  #         ForwardedValues:
+  #           QueryString: "true"
+  #         TargetOriginId: only-origin
+  #         ViewerProtocolPolicy: allow-all
+  #       ViewerCertificate:
+  #         AcmCertificateArn: arn:aws:acm:us-east-1:809489680864:certificate/540970d9-3fa5-4904-a28c-f4493fb9de27
+  #         SslSupportMethod: vip
+  #       DefaultRootObject: index.html
+  #       Origins:
+  #         - CustomOriginConfig:
+  #             HTTPPort: "80"
+  #             HTTPSPort: "443"
+  #             OriginProtocolPolicy: http-only
+  #           DomainName:
+  #             !Join [
+  #               "",
+  #               [
+  #                 !Ref "S3BucketWebsiteContent",
+  #                 !FindInMap [
+  #                   Region2S3WebsiteSuffix,
+  #                   !Ref "AWS::Region",
+  #                   Suffix,
+  #                 ],
+  #               ],
+  #             ]
+  #           Id: only-origin
 
 Outputs:
   WebsiteURL:

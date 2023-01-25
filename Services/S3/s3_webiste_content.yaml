@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Cloudformation template to create a bucket s3 with the settings to be used as a web host
+Parameters:
+  BucketName:
+    Type: String
+    Description: The bucket name to be created
+    AllowedPattern: (?!-)[a-zA-Z0-9-.]{1,63}(?<!-)
+    ConstraintDescription: must be a valid bucket name
+
+Resources:
+  S3BucketWebsiteContent:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName
+      AccessControl: PublicRead
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+
+  S3BucketWebsiteContentPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref BucketName
+      PolicyDocument: 
+        Version: 2012-10-17
+        Statement:
+          - Action:
+            - s3:GetObject
+            Effect: Allow
+            Resource: !Join ["", [!GetAtt [S3BucketWebsiteContent, Arn], "/*"]]
+            Principal: "*"
+Outputs:
+  WebsiteURL:
+    Value: !GetAtt [S3BucketWebsiteContent, WebsiteURL]
+    Description: URL for website hosted on S3
+  S3BucketSecureURL:
+    Value: !Join ["", ["https://", !GetAtt [S3BucketWebsiteContent, DomainName]]]
+    Description: Name of S3 bucket to hold website content
