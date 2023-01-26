@@ -1,0 +1,20 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Cloudformation template to create a certificate SSL for a domain in Amazon Certificate Manager
+Parameters:
+  DomainName:
+    Type: String
+    Description: The domain name to be associated with the certificate
+    AllowedPattern: (?!-)[a-zA-Z0-9-.]{1,63}(?<!-)
+    ConstraintDescription: must be a valid domain name.
+Resources: 
+  Certificate: 
+    Type: "AWS::CertificateManager::Certificate"
+    Properties: 
+      DomainName: !Ref DomainName
+      ValidationMethod: DNS
+      SubjectAlternativeNames:
+        - !Join ["", ["*.", !Ref DomainName]]
+Outputs:
+  CertificateId:
+    Description: "The certificate ID"
+    Value: !Ref Certificate

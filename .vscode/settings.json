@@ -1,5 +1,8 @@
 {
     "conventionalCommits.scopes": [
         "s3-template"
-    ]
+    ],
+    "yaml.schemas": {
+        "aws:/c%3A/Users/mcama/AppData/Roaming/Code/User/globalStorage/amazonwebservices.aws-toolkit-vscode/cloudformation.schema.json": "file:///c%3A/Users/mcama/OneDrive/Documentos/Projects/workshops/AWS/CloudFormation/cloudformation_templates/Services/S3/Amazon_Cloudfront_Distribution.yaml"
+    }
 }

@@ -37,9 +37,12 @@ Resources:
             Resource: !Join ["", [!GetAtt [S3BucketWebsiteContent, Arn], "/*"]]
             Principal: "*"
 Outputs:
-  WebsiteURL:
-    Value: !GetAtt [S3BucketWebsiteContent, WebsiteURL]
-    Description: URL for website hosted on S3
   S3BucketSecureURL:
     Value: !Join ["", ["https://", !GetAtt [S3BucketWebsiteContent, DomainName]]]
     Description: Name of S3 bucket to hold website content
+  BucketName:
+    Value: !Ref "S3BucketWebsiteContent"
+    Description: Name of S3 bucket to hold website content
+  BucketEndpoint:
+    Value: !GetAtt S3BucketWebsiteContent.DomainName
+    Description: Endpoint of S3 bucket to hold website content

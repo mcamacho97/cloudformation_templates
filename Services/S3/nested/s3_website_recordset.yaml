@@ -1,9 +1,0 @@
-  Route53RecordSet:
-    Type: AWS::Route53::RecordSet
-    Properties:
-      Name: !Ref HostedZone
-      Type: A
-      AliasTarget:
-        HostedZoneId: !Ref Route53HostedZone
-        DNSName: !Ref HostedZone
-      HostedZoneId: !Ref Route53HostedZone
