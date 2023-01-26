@@ -1,0 +1,38 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Cloudformation template to create a hosted zone
+Parameters:
+  HostedZone:
+    Type: String
+    Description: The DNS name of an existing Amazon Route 53 hosted zone
+    AllowedPattern: (?!-)[a-zA-Z0-9-.]{1,63}(?<!-)
+    ConstraintDescription: must be a valid DNS zone name
+  
+Resources:
+  Route53HostedZone: 
+    Type: "AWS::Route53::HostedZone"
+    Properties:
+      Name: !Ref HostedZone 
+      HostedZoneConfig: 
+        Comment: Public Host zoned for S3 website
+  CloudFrontRecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Name: !Ref HostedZone
+      Type: A
+      # AliasTarget:
+      #   HostedZoneId: !GetAtt CloudFrontDistribution.HostedZoneId
+      #   DNSName: !GetAtt CloudFrontDistribution.DomainName
+      HostedZoneId: !Ref Route53HostedZone
+Outputs:
+  NameServerOne:
+    Value: !Select [0, !GetAtt Route53HostedZone.NameServers]
+    Description: Name servers 1 for the newly created website
+  NameServerTwo:
+    Value: !Select [1, !GetAtt Route53HostedZone.NameServers]
+    Description: Name servers 2 for the newly created website
+  NameServerThree:
+    Value: !Select [2, !GetAtt Route53HostedZone.NameServers]
+    Description: Name servers 3 for the newly created website
+  NameServerFour:
+    Value: !Select [3, !GetAtt Route53HostedZone.NameServers]
+    Description: Name servers 4 for the newly created website
