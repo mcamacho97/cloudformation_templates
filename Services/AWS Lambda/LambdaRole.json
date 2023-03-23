@@ -1,0 +1,80 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Description": "Salesforce Connector Roles & Policies Stack",
+  "Parameters": {
+    "0ptionalSuggestedStackName": {
+      "Type": "String",
+      "Default": "SalesforceConector-RolesAndPolicies-Stack",
+      "Description": "Copy this parameter to use it like the stack name."
+    },
+    "LambdaRoleName": {
+      "Type": "String",
+      "Default": "BLRoleForLambdaAttachmentsBucketAccess",
+      "Description": "Default Name For The Lambda Role"
+    },
+    "LambdaPolicyName": {
+      "Type": "String",
+      "Default": "BLPolicyForLambdaAttachmentsBucketAccess",
+      "Description": "Default Name For The Lambda Policy"
+    },
+    "StageName": {
+      "Type": "String",
+      "Default": "PRO",
+      "Description": "Stage name to identify resources.",
+      "AllowedValues": ["prod", "dev", "test"]
+    }
+  },
+  "Resources": {
+    "LambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": {
+          "Fn::Sub": "${AttachmentsBucketAccessLambdaRoleName}-${StageName}"
+        },
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": { "Service": ["lambda.amazonaws.com"] },
+              "Action": ["sts:AssumeRole"]
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        ],
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": {
+              "Fn::Sub": "${LambdaPolicyName}"
+            },
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Action": ["s3:GetObject", "s3:PutObject"],
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:aws:s3:::test/*"
+                    }
+                  ],
+                  "Effect": "Allow"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "LambdaRoleARN": {
+      "Description": "The ARN role for the Lambda.",
+      "Value": { "Fn::GetAtt": ["LambdaRole", "Arn"] },
+      "Export": { "Name": { "Fn::Sub": "LambdaRoleARNOutput-${StageName}" } }
+    }
+  }
+}

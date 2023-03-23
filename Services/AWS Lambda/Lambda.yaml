@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+    AWS CloudFormation Sample Template Lambda.template
+Parameters:
+    0ptionalSuggestedStackName:
+        Type: String
+        Default: AWS-Lambda-Resources-Stack
+        Description: Copy this parameter to use it like the stack name.
+    AliasLambdaFunctionName:
+        Type: String
+        Default: dev
+        Description: Stage name to identify resources.
+        AllowedValues: ["prod", "dev", "test"]
+
+Resources:
+    LambdaFunctionExample:
+        Type: AWS::Serverless::Function
+        Properties:
+            FunctionName: !Sub LambdaFunctionExample-${AliasLambdaFunctionName}
+            Description: Example of Function
+            Handler: index.lambda_handler
+            Runtime: python3.9
+            MemorySize: 128
+            Timeout: 28
+            Role:
+                Fn::ImportValue: !Sub LambdaRoleARNOutput-${AliasLambdaFunctionName}
+            Environment:
+                Variables:
+                    EXAMPLE_VARIABLE: "EXAMPLE_VALUE"
+            InlineCode: |
+                import json
+
+                def lambda_handler(event, context):
+                    # TODO implement
+                    return {
+                        'statusCode': 200,
+                        'body': json.dumps('Hello from Lambda!')
+                    }
+Outputs:
