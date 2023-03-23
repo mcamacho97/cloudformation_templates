@@ -1,0 +1,174 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: |
+    AWS CloudFormation Sample to create a lambda function and integrate it to a existing REST API with proxy resource
+Parameters:
+    0ptionalSuggestedStackName:
+        Type: String
+        Default: AWS-Lambda-Resources-Stack
+        Description: Copy this parameter to use it like the stack name.
+    AliasLambdaFunctionName:
+        Type: String
+        Default: dev
+        Description: Stage name to identify resources.
+        AllowedValues: ["prod", "dev", "test"]
+    ApiKeyRequired:
+        Type: String
+        Default: true
+        Description: Includes API key to the API
+    AllowedReferers:
+      Type: CommaDelimitedList
+      Default: "https://www.lafise.com/,http://dev.sistematica.io/,http://localhost:3000/"
+      Description: "Use this parameter to define allowed referers that can access the API, example: 'https://www.lafise.com/,http://dev.sistematica.io/'."
+    RestApiName:
+      Type: String
+      Default: dev
+      Description: RestApi name to identify resources.
+Resources:
+  ExampleRestApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref AliasLambdaFunctionName
+      Name: !Sub ExampleRestApi-${AliasLambdaFunctionName}
+      Cors:
+        AllowHeaders: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+        MaxAge: "'3600'"
+        AllowMethods: "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
+      GatewayResponses:
+        DEFAULT_4XX:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Headers: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"
+              Access-Control-Allow-Origin: "'*'"
+              Access-Control-Allow-Methods: "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
+        DEFAULT_5XX:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Headers: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"
+              Access-Control-Allow-Origin: "'*'"
+              Access-Control-Allow-Methods: "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
+      Auth:
+        ResourcePolicy:
+          CustomStatements:
+            - Effect: Allow
+              Principal: "*"
+              Action: execute-api:Invoke
+              Resource: !Sub "execute-api:/${AliasLambdaFunctionName}/*/*"
+              Condition:
+                StringEquals:
+                  "aws:Referer": !Ref AllowedReferers
+      EndpointConfiguration: Regional
+
+  ExampleRestApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      Name: !Sub ${AWS::StackName}-apikey-${AliasLambdaFunctionName}
+      Description: CloudFormation API Key V1
+      Enabled: true
+      GenerateDistinctId: false
+  ExampleRestApiUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    DependsOn:
+      - ExampleRestApiGatewayStage
+    Properties:
+      ApiStages:
+        - ApiId: !Ref ExampleRestApiGateway
+          Stage: !Ref AliasLambdaFunctionName
+      Description: !Sub ${AWS::StackName} usage plan ${AliasLambdaFunctionName}
+  ApiUsagePlanKey:
+      Type: "AWS::ApiGateway::UsagePlanKey"
+      Properties:
+        KeyId: !Ref ExampleRestApiKey
+        KeyType: API_KEY
+        UsagePlanId: !Ref ExampleRestApiUsagePlan
+  EmptyModel:
+    Type: "AWS::ApiGateway::Model"
+    Properties:
+      RestApiId: !Ref ExampleRestApiGateway
+      ContentType: application/json
+      Description: This is a default empty schema model
+      Name: Empty
+      Schema:
+        $schema: "http://json-schema.org/draft-04/schema#"
+        title: Empty Schema
+        type: object
+  ErrorModel:
+    Type: "AWS::ApiGateway::Model"
+    Properties:
+      RestApiId: !Ref ExampleRestApiGateway
+      ContentType: application/json
+      Description: This is a default empty schema model
+      Name: Error
+      Schema:
+        $schema: "http://json-schema.org/draft-04/schema#"
+        title: Error Schema
+        type: object
+        properties:
+          message:
+            type: string
+  # LambdaFunctionExample:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     FunctionName: !Sub LambdaFunctionExample-${AliasLambdaFunctionName}
+  #     Description: Example of Function
+  #     Handler: index.lambda_handler
+  #     Runtime: python3.9
+  #     Events:
+  #       ApiEvent:
+  #         Type: Api
+  #         Properties:
+  #           RestApiId: !Ref ExampleRestApiGateway
+  #           Path: /notapi/salesforce/onboarding
+  #           Method: post
+  #           Auth:
+  #             ApiKeyRequired: !Ref ApiKeyRequired
+  #       MemorySize: 128
+  #       Timeout: 28
+  #       Role:
+  #         Fn::ImportValue: !Sub LambdaRoleARNOutput-${AliasLambdaFunctionName}
+  #       Environment:
+  #         Variables:
+  #           EXAMPLE_VARIABLE: "EXAMPLE_VALUE"
+  #       InlineCode: |
+  #         import json
+
+  #         def lambda_handler(event, context):
+  #             # TODO implement
+  #             return {
+  #                 'statusCode': 200,
+  #                 'body': json.dumps('Hello from Lambda!')
+  #             }
+  LambdaFunctionExample:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub LambdaExample-${AliasLambdaFunctionName}
+      Description: Example of a Lambda function
+      Handler: index.lambda_handler
+      Runtime: python3.9
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ExampleRestApiGateway
+            Path: /api/examples
+            Method: post
+            Auth:
+              ApiKeyRequired: !Ref ApiKeyRequired
+      MemorySize: 128
+      Timeout: 28
+      Role:
+        Fn::ImportValue: !Sub LambdaRoleARNOutput-${AliasLambdaFunctionName}
+      Environment:
+        Variables:
+          EXAMPLE_VARIABLE: "EXAMPLE_VALUE"
+      InlineCode: |
+        import json
+
+        def lambda_handler(event, context):
+            # TODO implement
+            return {
+                'statusCode': 200,
+                'body': json.dumps('Hello from Lambda!')
+            }
+

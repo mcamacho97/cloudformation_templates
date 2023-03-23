@@ -1,0 +1,142 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: |
+    AWS CloudFormation Sample to create a lambda function and integrate it to a existing REST API with proxy resource
+Parameters:
+    0ptionalSuggestedStackName:
+        Type: String
+        Default: AWS-Lambda-Resources-Stack
+        Description: Copy this parameter to use it like the stack name.
+    AliasLambdaFunctionName:
+        Type: String
+        Default: dev
+        Description: Stage name to identify resources.
+        AllowedValues: ["prod", "dev", "test"]
+    ApiKeyRequired:
+        Type: String
+        Default: true
+        Description: Includes API key to the API
+    RestApiId:
+        Type: String
+        Default: 0jsz3ea2c4
+        Description: Rest API Id
+    RootParentId:
+        Type: String
+        Default: d7ccpgoc79
+        Description: Root resource API Id
+    ResourcePathName:
+        Type: String
+        Default: api-existing
+        Description: Resource path name
+
+Resources:
+    LambdaFunctionExample:
+        Type: AWS::Serverless::Function
+        Properties:
+            FunctionName: !Sub LambdaFunctionExample-${AliasLambdaFunctionName}
+            Description: Example of Function
+            Handler: index.lambda_handler
+            Runtime: python3.9
+            MemorySize: 128
+            Timeout: 28
+            Role:
+                Fn::ImportValue: !Sub LambdaRoleARNOutput-${AliasLambdaFunctionName}
+            Environment:
+                Variables:
+                    EXAMPLE_VARIABLE: "EXAMPLE_VALUE"
+            InlineCode: |
+                import json
+
+                def lambda_handler(event, context):
+                    # TODO implement
+                    return {
+                        'statusCode': 200,
+                        'body': json.dumps('Hello from Lambda!')
+                    }
+    ApiResource:
+        Type: "AWS::ApiGateway::Resource"
+        Properties:
+            ParentId: !Ref RootParentId
+            RestApiId: !Ref RestApiId
+            PathPart: !Ref ResourcePathName
+    ExampleResource:
+        Type: "AWS::ApiGateway::Resource"
+        Properties:
+            ParentId: !Ref ApiResource
+            RestApiId: !Ref RestApiId
+            PathPart: "example"
+    ProxyResource:
+        Type: "AWS::ApiGateway::Resource"
+        Properties:
+            ParentId: !Ref ExampleResource
+            RestApiId: !Ref RestApiId
+            PathPart: "{id+}"
+    GetExampleMethod:
+        Type: "AWS::ApiGateway::Method"
+        Properties:
+            ApiKeyRequired: !Ref ApiKeyRequired
+            RestApiId: !Ref RestApiId
+            ResourceId: !Ref ProxyResource
+            HttpMethod: "GET"
+            AuthorizationType: "NONE"
+            Integration:
+                Type: "AWS_PROXY"
+                IntegrationHttpMethod: "POST"
+                Uri: !Sub
+                    - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations"
+                    - LambdaArn: !GetAtt LambdaFunctionExample.Arn
+    GetExampleMethodPermission:
+        Type: AWS::Lambda::Permission
+        Properties:
+            FunctionName:
+                Ref: LambdaFunctionExample
+            Action: lambda:InvokeFunction
+            Principal: apigateway.amazonaws.com
+            SourceArn:
+                Fn::Sub:
+                    - arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${__ApiId__}/${__Stage__}/GET/${ResourcePathName}/example/*
+                    - __Stage__: "*"
+                      __ApiId__:
+                          Ref: RestApiId
+    OptionsExampleMethod:
+        Type: "AWS::ApiGateway::Method"
+        Properties:
+            HttpMethod: "OPTIONS"
+            RestApiId: !Ref RestApiId
+            ResourceId: !Ref ExampleResource
+            AuthorizationType: "NONE"
+            ApiKeyRequired: false
+            Integration:
+                Type: "MOCK"
+                RequestTemplates:
+                    "application/json": '{ "statusCode": 200 }'
+                IntegrationResponses:
+                    - StatusCode: 200
+                      ResponseParameters:
+                          method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
+                          method.response.header.Access-Control-Allow-Methods: "'OPTIONS,GET,PUT'"
+                          method.response.header.Access-Control-Allow-Origin: "'*'"
+                      ResponseTemplates:
+                          "application/json": ""
+            MethodResponses:
+                - StatusCode: 200
+                  ResponseModels:
+                      "application/json": "Empty"
+                  ResponseParameters:
+                      method.response.header.Access-Control-Allow-Headers: true
+                      method.response.header.Access-Control-Allow-Methods: true
+                      method.response.header.Access-Control-Allow-Origin: true
+
+    ApiGatewayDeployment: # Si se necesita actualizar el stage, se tiene que cambiar el nombre del recurso por otro
+        Type: AWS::ApiGateway::Deployment
+        Properties:
+            RestApiId: !Ref RestApiId
+            StageName: v1
+            Description: "Deployment for my API stage"
+        DependsOn:
+            - ApiResource
+            - ExampleResource
+            - ProxyResource
+            - GetExampleMethod
+            - OptionsExampleMethod
+            - GetExampleMethodPermission

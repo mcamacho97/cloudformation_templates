@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Cloudformation Template to create AWS a DynamoDB Table with the billing mode On-demand.
+Parameters:
+  TableName:
+    Description: Table name
+    Type: String
+    Default: "DynamoDBTestTable"
+  PrimaryKeyName:
+    Description: Name of the primary key
+    Type: String
+    AllowedPattern: "[a-zA-Z0-9]*"
+    MinLength: "1"
+    MaxLength: "2048"
+    ConstraintDescription: must contain only alphanumberic characters
+  PrimaryKeyType:
+    Description: Valid values are S(String), N(Number), B(Boolean)
+    Type: String
+    Default: S
+    AllowedValues:
+      - S
+      - N
+      - B
+
+Resources:
+  DynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref TableName
+      AttributeDefinitions:
+        - AttributeName: !Ref "PrimaryKeyName"
+          AttributeType: !Ref "PrimaryKeyType"
+      KeySchema:
+        - AttributeName: !Ref "PrimaryKeyName"
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+Outputs:
+  TableName:
+    Value: !Ref "DynamoDBTable"
+    Description: Table name of the newly created DynamoDB table

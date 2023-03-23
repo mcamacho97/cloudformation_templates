@@ -1,0 +1,136 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Salesforce Connector Roles & Policies Stack
+
+Parameters:
+  0ptionalSuggestedStackName:
+    Type: String
+    Default: SalesforceConector-RolesAndPolicies-Stack
+    Description: Copy this parameter to use it like the stack name.
+
+  StageName:
+    Type: String
+    Default: dev
+    Description: Stage name to identify resources.
+
+Resources:
+  CodebuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub SIRoleForCodeBuildReactAppDemo-${StageName}
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Path: /
+
+  SalesforceCaseLambdaPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub BLPolicyForLambdaSalesforceCase-${StageName}
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - secretsmanager:GetSecretValue
+            Resource:
+              - !Ref SalesforceCredentialsSecret
+            Effect: Allow
+          - Action:
+              - s3:PutObject
+            Resource:
+              - !Sub arn:aws:s3:::${SalesforceAttachmentsBucketName}/*
+            Effect: Allow
+      Roles:
+        - !Ref SalesforceCaseLambdaRole
+
+  PresignedURLGeneratorLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub BLRoleForLambdaPresignedURLGenerator-${StageName}
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Path: /
+
+  PresignedURLGeneratorLambdaPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub BLIPolicyForLambdaPresignedURLGenerator-${StageName}
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - s3:GetObject
+              - s3:PutObject
+            Resource:
+              - !Sub arn:aws:s3:::${SalesforceAttachmentsBucketName}/*
+            Effect: Allow
+      Roles:
+        - !Ref PresignedURLGeneratorLambdaRole
+
+  SalesforceOpportunityLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub BLRoleForLambdaSalesforceOpportunity-${StageName}
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Path: /
+
+  SalesforceOpportunityLambdaPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub BLIPolicyForLambdaSalesforceOpportunity-${StageName}
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action:
+              - secretsmanager:GetSecretValue
+            Resource:
+              - !Ref SalesforceCredentialsSecret
+            Effect: Allow
+      Roles:
+        - !Ref SalesforceOpportunityLambdaRole
+
+Outputs:
+  SalesforceCaseLambdaRoleARN:
+    Description: The ARN role for the Salesforce Case Lambda.
+    Value: !GetAtt SalesforceCaseLambdaRole.Arn
+    Export:
+      Name: !Sub SalesforceCaseLambdaRoleARNOutput-${StageName}
+
+  PresignedURLGeneratorLambdaRoleARN:
+    Description: The ARN role for the Presigned URL Generator Lambda.
+    Value: !GetAtt PresignedURLGeneratorLambdaRole.Arn
+    Export:
+      Name: !Sub PresignedURLGeneratorLambdaRoleARNOutput-${StageName}
+
+  SalesforceOpportunityLambdaRoleARN:
+    Description: The ARN role for the Salesforce Opportunity LambdaRole.
+    Value: !GetAtt SalesforceOpportunityLambdaRole.Arn
+    Export:
+      Name: !Sub SalesforceOpportunityLambdaRoleARNOutput-${StageName}
