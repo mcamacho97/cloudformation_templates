@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: |
+  Cloudformation template to create a Codecommit respositry
+Parameters:
+  0ptionalSuggestedStackName:
+    Type: String
+    Default: AWS-Codecommit-Repository-Stack
+    Description: Copy this parameter to use it like the stack name.
+  RepositoryName:
+    Type: String
+    Default: repository_name
+    Description: Repository name
+  RepositoryDescription:
+    Type: String
+    Default: description
+    Description: Repository description
+  BranchName:
+    Type: String
+    Default: main
+    Description: Repository default branch
+  BucketNameSource:
+    Type: String
+    Default: MySourceCodeBucket
+    Description: Bucket name
+  KeyName:
+    Type: String
+    Default: MyKey
+    Description: Key name
+Resources:
+  RepositoryResource:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryName: !Ref RepositoryName
+      RepositoryDescription: !Ref RepositoryDescription
+      Code:
+        BranchName: !Ref BranchName
+        S3:
+          Bucket: !Ref BucketNameSource
+          Key: !Ref KeyName
+          # ObjectVersion: 1
+Outputs:
+  RepositoryName:
+    Description: The name of the AWS CodeCommit repository
+    Value: !GetAtt RepositoryResource.Name
+  RepositoryHttpUrl:
+    Description: The clone url http from the AWS CodeCommit repository
+    Value: !GetAtt RepositoryResource.CloneUrlHttp

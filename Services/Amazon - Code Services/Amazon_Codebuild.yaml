@@ -1,0 +1,131 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  Amazon CodeBuild project for CI/CD
+Parameters:
+  0ptionalSuggestedStackName:
+    Type: String
+    Default: AWS-Codebuild-Project-Stack
+    Description: Copy this parameter to use it like the stack name.
+  ProjectName:
+    Type: String
+    Default: build_project_name
+    Description: Project name
+  ProjectDescription:
+    Type: String
+    Default: build_description
+    Description: Project description
+  ComputerType:
+    Description: Valid values are BUILD_GENERAL1_SMALL, BUILD_GENERAL1_MEDIUM and BUILD_GENERAL1_LARGE
+    Type: String
+    Default: BUILD_GENERAL1_SMALL
+    AllowedValues:
+      - BUILD_GENERAL1_SMALL
+      - BUILD_GENERAL1_MEDIUM
+      - BUILD_GENERAL1_LARGE
+  EnvironmentType:
+    Description: Valid values are ARM_CONTAINER, LINUX_CONTAINER, LINUX_GPU_CONTAINER and WINDOWS_CONTAINER
+    Type: String
+    Default: LINUX_CONTAINER
+    AllowedValues:
+      - ARM_CONTAINER
+      - LINUX_CONTAINER
+      - LINUX_GPU_CONTAINER
+      - WINDOWS_CONTAINER
+Resources:
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}ServiceRole"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: "codebuild.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        - PolicyName: !Sub "${AWS::StackName}ServicePolicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: logsAccess
+                Effect: Allow
+                Action:
+                  - "logs:CreateLogStream"
+                  - "iam:PassRole"
+                  - "logs:CreateLogGroup"
+                  - "logs:PutLogEvents"
+                Resource:
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${ProjectName}"
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${ProjectName}:*"
+              - Sid: servicesAccess
+                Effect: Allow
+                Action:
+                  - "s3:PutObject"
+                  - "s3:GetObject"
+                  - "appsync:GetSchemaCreationStatus"
+                  - "appsync:DeleteGraphqlApi"
+                  - "appsync:CreateDataSource"
+                  - "appsync:StartSchemaCreation"
+                  - "s3:GetBucketAcl"
+                  - "s3:GetBucketLocation"
+                  - "appsync:CreateGraphqlApi"
+                  - "s3:GetObjectVersion"
+                  - "cloudformation:CreateStack"
+                  - "cloudformation:CreateChangeSet"
+                  - "cloudformation:DescribeChangeSet"
+                  - "cloudformation:GetTemplateSummary"
+                Resource: "*"
+  Project:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Ref ProjectName
+      Description: !Ref ProjectDescription
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: !Ref EnvironmentType
+        ComputeType: !Ref ComputerType
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:4.0
+        # EnvironmentVariables:
+        #   - Name: DYNAMO_DB_TABLE
+        #     Type: PLAINTEXT
+        #     Value: varValue
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: |
+          version: 0.2
+          phases:
+            install:
+              runtime-versions:
+                nodejs: 16
+              commands:
+                - npm install
+            pre_build:
+              commands:
+                - DYNAMO_DB_TABLE=$(find . -name dynamodb_table.yaml)
+                - APPSYNC_API=$(find . -name appsync_api.yaml)
+                - APPSYNC_DATASOURCE=$(find . -name appsync_datasource.yaml)
+                - echo "DynamoDB template path = ${DYNAMO_DB_TABLE}"
+                - echo "Appsync API template path = ${APPSYNC_API}"
+                - echo "Appsync Datasource template path = ${APPSYNC_DATASOURCE}"
+                - aws cloudformation deploy --template-file ${DYNAMO_DB_TABLE} --stack-name dynamodb-stack --parameter-overrides TableName="DynamoDBTestTable" PrimaryKeyName="id" PrimaryKeyType="S" --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset
+            build:
+              commands:
+                - sam build -t ${APPSYNC_API}; sam deploy --template-file ${APPSYNC_API} --stack-name appsync-stack-sam --capabilities CAPABILITY_IAM --parameter-overrides UserPoolId=us-east-1_AEwY2Ze9G GraphQLAPIName=appsync --resolve-s3 --no-confirm-changeset --no-fail-on-empty-changeset
+                - aws cloudformation deploy --template-file ${APPSYNC_DATASOURCE} --stack-name appsync-datasource-stack --parameter-overrides ApiId=$(aws cloudformation describe-stacks --stack-name appsync-stack-sam --query 'Stacks[0].Outputs[?OutputKey==`GraphQLAPIId`].OutputValue' --output text) DynamoDBTableName=$(aws cloudformation describe-stacks --stack-name dynamodb-stack --query 'Stacks[0].Outputs[?OutputKey==`DynamoDBTableName`].OutputValue' --output text) --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset
+                - npm run build
+          cache:
+            paths:
+              - node_modules/
+              - ${DYNAMO_DB_TABLE}
+              - ${APPSYNC_API}
+              - ${APPSYNC_DATASOURCE}
+          artifacts:
+            files:
+              - '**/*'
+            base-directory: 'build' 
+      TimeoutInMinutes: 10
+# Outputs:
