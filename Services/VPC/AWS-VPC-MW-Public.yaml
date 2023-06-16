@@ -1,0 +1,111 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  Cloudformation template to create a VPC for Mombacho Wood
+Parameters:
+    0ptionalSuggestedStackName:
+        Type: String
+        Default: AWS-VPC-MW-Public-Resources-Stack
+        Description: Copy this parameter to use it like the stack name.
+    SubnetName:
+      Type: String
+      Description: The name of the public subnet
+      Default: mw-public-subnet
+    SubnetCidrBlock:
+      Type: String
+      Description: CIDR block for the public subnet
+      AllowedPattern: (\d{1,3}\.){3}\d{1,3}/\d{1,2}
+      Default: 172.16.20.0/24	
+    NGRouteTableName:
+      Type: String
+      Description: The name of the Route table for Nat gateway
+      Default: mw-private-ng-routetable
+    IGRouteTableName:
+      Type: String
+      Description: The name of the Route table for Internet Gateway
+      Default: mw-public-ig-routetable
+    NATGatewayName:
+      Type: String
+      Description: The name of the NAT Gateway
+      Default: mw-natgateway
+    InternetGatewayName:
+      Type: String
+      Description: The name of the Internet Gateway
+      Default: mw-igw
+Resources:
+  Subnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !ImportValue VPCId
+      CidrBlock: !Ref SubnetCidrBlock
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: "us-east-1a"
+      Tags:
+      - Key: Name
+        Value: !Ref SubnetName
+
+# Internet Gateway Resources
+  IGRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !ImportValue VPCId
+      Tags:
+      - Key: Name
+        Value: !Ref IGRouteTableName
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value: !Ref InternetGatewayName
+  VpcIGAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !ImportValue VPCId
+      InternetGatewayId: !Ref InternetGateway
+  RouteInternetGateway:
+    Type: AWS::EC2::Route
+    Properties:
+        RouteTableId: !Ref IGRouteTable
+        DestinationCidrBlock: '0.0.0.0/0'
+        GatewayId: !Ref InternetGateway
+  SubnetAssociationIGRouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref IGRouteTable
+      SubnetId: !Ref Subnet
+
+# NAT Gateway Resources
+  NGRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !ImportValue VPCId
+      Tags:
+      - Key: Name
+        Value: !Ref NGRouteTableName
+  NATGatewayEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+        Domain: vpc
+  NATGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+        AllocationId: !GetAtt NATGatewayEIP.AllocationId
+        SubnetId: !Ref Subnet
+        Tags:
+        - Key: Name
+          Value: !Ref NATGatewayName
+  RouteNATGateway:
+    Type: AWS::EC2::Route
+    Properties:
+        RouteTableId: !Ref NGRouteTable
+        DestinationCidrBlock: '0.0.0.0/0'
+        NatGatewayId: !Ref NATGateway
+  SubnetAssociationNGRouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref NGRouteTable
+      SubnetId: !ImportValue SubnetC
+Outputs:
+  NGRouteTableId:
+    Description: The ID of the route table
+    Value: !Ref NGRouteTable

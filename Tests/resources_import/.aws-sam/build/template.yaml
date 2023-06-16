@@ -1,0 +1,13 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform:
+- AWS::Serverless-2016-10-31
+Description: 'Cloudformation template to create a sample of resources imports
+
+  '
+Resources:
+  ImportGraphQLSchema:
+    Type: AWS::AppSync::GraphQLSchema
+    DeletionPolicy: Retain
+    Properties:
+      ApiId: ld7jznsenjgdvnporcfo436llu
+      DefinitionS3Location: ..\..\schema.graphql

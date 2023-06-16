@@ -1,0 +1,498 @@
+
+type User {
+  id: ID!
+  country: String!
+  email: AWSEmail!
+  name: String!
+  isActive: String!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Catalog {
+  id: ID!
+  type: String!
+  country: String
+  code: String
+  description: String!
+  parentId: ID
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type CreditLine {
+  id: ID!
+  country: String!
+  accountNumber: String!
+  openingDate: AWSDate!
+  dueDate: AWSDate!
+  approvedAmount: Float!
+  utilizedAmount: Float!
+  region: Catalog
+  branchOffice: Catalog
+  bankingType: Catalog!
+  userId: ID
+  user: User
+  defaultUserId: ID
+  defaultUser: User
+  isActive: Boolean
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+  creditLineRegionId: ID
+  creditLineBranchOfficeId: ID
+  creditLineBankingTypeId: ID!
+}
+
+input CreditLineModelInput {
+  id: String
+  accountNumber: String
+  country: String
+  region: String
+  branchOffice: String
+  bankingType: String
+  openingDate: String
+  dueDate: String
+  approvedAmount: String
+  utilizedAmount: String
+  user: String
+  defaultUser: String
+  isActive: Boolean
+}
+
+input SalesforceCreditLineInput {
+  id: String
+  region: String
+  branchOffice: String
+  bankingType: String
+  user: String
+  isActive: Boolean
+}
+
+type Mutation {
+  putSalesforceCreditLines(input: [CreditLineModelInput!]!): String
+  patchSalesforceCreditLines(input: [CreditLineModelInput!]!): String
+  updateSalesforceCreditLine(input: SalesforceCreditLineInput): String
+  createUser(input: CreateUserInput!, condition: ModelUserConditionInput): User
+  updateUser(input: UpdateUserInput!, condition: ModelUserConditionInput): User
+  deleteUser(input: DeleteUserInput!, condition: ModelUserConditionInput): User
+  createCatalog(input: CreateCatalogInput!, condition: ModelCatalogConditionInput): Catalog
+  updateCatalog(input: UpdateCatalogInput!, condition: ModelCatalogConditionInput): Catalog
+  deleteCatalog(input: DeleteCatalogInput!, condition: ModelCatalogConditionInput): Catalog
+  createCreditLine(input: CreateCreditLineInput!, condition: ModelCreditLineConditionInput): CreditLine
+  updateCreditLine(input: UpdateCreditLineInput!, condition: ModelCreditLineConditionInput): CreditLine
+  deleteCreditLine(input: DeleteCreditLineInput!, condition: ModelCreditLineConditionInput): CreditLine
+}
+
+input ModelStringInput {
+  ne: String
+  eq: String
+  le: String
+  lt: String
+  ge: String
+  gt: String
+  contains: String
+  notContains: String
+  between: [String]
+  beginsWith: String
+  attributeExists: Boolean
+  attributeType: ModelAttributeTypes
+  size: ModelSizeInput
+}
+
+input ModelIntInput {
+  ne: Int
+  eq: Int
+  le: Int
+  lt: Int
+  ge: Int
+  gt: Int
+  between: [Int]
+  attributeExists: Boolean
+  attributeType: ModelAttributeTypes
+}
+
+input ModelFloatInput {
+  ne: Float
+  eq: Float
+  le: Float
+  lt: Float
+  ge: Float
+  gt: Float
+  between: [Float]
+  attributeExists: Boolean
+  attributeType: ModelAttributeTypes
+}
+
+input ModelBooleanInput {
+  ne: Boolean
+  eq: Boolean
+  attributeExists: Boolean
+  attributeType: ModelAttributeTypes
+}
+
+input ModelIDInput {
+  ne: ID
+  eq: ID
+  le: ID
+  lt: ID
+  ge: ID
+  gt: ID
+  contains: ID
+  notContains: ID
+  between: [ID]
+  beginsWith: ID
+  attributeExists: Boolean
+  attributeType: ModelAttributeTypes
+  size: ModelSizeInput
+}
+
+input ModelSubscriptionStringInput {
+  ne: String
+  eq: String
+  le: String
+  lt: String
+  ge: String
+  gt: String
+  contains: String
+  notContains: String
+  between: [String]
+  beginsWith: String
+  in: [String]
+  notIn: [String]
+}
+
+input ModelSubscriptionIntInput {
+  ne: Int
+  eq: Int
+  le: Int
+  lt: Int
+  ge: Int
+  gt: Int
+  between: [Int]
+  in: [Int]
+  notIn: [Int]
+}
+
+input ModelSubscriptionFloatInput {
+  ne: Float
+  eq: Float
+  le: Float
+  lt: Float
+  ge: Float
+  gt: Float
+  between: [Float]
+  in: [Float]
+  notIn: [Float]
+}
+
+input ModelSubscriptionBooleanInput {
+  ne: Boolean
+  eq: Boolean
+}
+
+input ModelSubscriptionIDInput {
+  ne: ID
+  eq: ID
+  le: ID
+  lt: ID
+  ge: ID
+  gt: ID
+  contains: ID
+  notContains: ID
+  between: [ID]
+  beginsWith: ID
+  in: [ID]
+  notIn: [ID]
+}
+
+enum ModelAttributeTypes {
+  binary
+  binarySet
+  bool
+  list
+  map
+  number
+  numberSet
+  string
+  stringSet
+  _null
+}
+
+input ModelSizeInput {
+  ne: Int
+  eq: Int
+  le: Int
+  lt: Int
+  ge: Int
+  gt: Int
+  between: [Int]
+}
+
+enum ModelSortDirection {
+  ASC
+  DESC
+}
+
+type ModelUserConnection {
+  items: [User]!
+  nextToken: String
+}
+
+input ModelUserFilterInput {
+  id: ModelIDInput
+  country: ModelStringInput
+  email: ModelStringInput
+  name: ModelStringInput
+  isActive: ModelStringInput
+  and: [ModelUserFilterInput]
+  or: [ModelUserFilterInput]
+  not: ModelUserFilterInput
+}
+
+type Query {
+  getUser(id: ID!): User
+  listUsers(id: ID, filter: ModelUserFilterInput, limit: Int, nextToken: String, sortDirection: ModelSortDirection): ModelUserConnection
+  getCatalog(id: ID!): Catalog
+  listCatalogs(filter: ModelCatalogFilterInput, limit: Int, nextToken: String): ModelCatalogConnection
+  getCreditLine(id: ID!): CreditLine
+  listCreditLines(filter: ModelCreditLineFilterInput, limit: Int, nextToken: String): ModelCreditLineConnection
+  usersByCountryByState(country: String!, isActive: ModelStringKeyConditionInput, sortDirection: ModelSortDirection, filter: ModelUserFilterInput, limit: Int, nextToken: String): ModelUserConnection
+  userByEmail(email: AWSEmail!, sortDirection: ModelSortDirection, filter: ModelUserFilterInput, limit: Int, nextToken: String): ModelUserConnection
+  catalogByType(type: String!, countryDescription: ModelCatalogByTypeCompositeKeyConditionInput, sortDirection: ModelSortDirection, filter: ModelCatalogFilterInput, limit: Int, nextToken: String): ModelCatalogConnection
+  catalogByParentId(parentId: ID!, description: ModelStringKeyConditionInput, sortDirection: ModelSortDirection, filter: ModelCatalogFilterInput, limit: Int, nextToken: String): ModelCatalogConnection
+  creditLineByCountry(country: String!, sortDirection: ModelSortDirection, filter: ModelCreditLineFilterInput, limit: Int, nextToken: String): ModelCreditLineConnection
+  creditLineByUser(userId: ID!, sortDirection: ModelSortDirection, filter: ModelCreditLineFilterInput, limit: Int, nextToken: String): ModelCreditLineConnection
+  creditLineByDefaultUser(defaultUserId: ID!, sortDirection: ModelSortDirection, filter: ModelCreditLineFilterInput, limit: Int, nextToken: String): ModelCreditLineConnection
+}
+
+input ModelUserConditionInput {
+  country: ModelStringInput
+  email: ModelStringInput
+  name: ModelStringInput
+  isActive: ModelStringInput
+  and: [ModelUserConditionInput]
+  or: [ModelUserConditionInput]
+  not: ModelUserConditionInput
+}
+
+input CreateUserInput {
+  id: ID
+  country: String!
+  email: AWSEmail!
+  name: String!
+  isActive: String!
+}
+
+input UpdateUserInput {
+  id: ID!
+  country: String
+  email: AWSEmail
+  name: String
+  isActive: String
+}
+
+input DeleteUserInput {
+  id: ID!
+}
+
+input ModelSubscriptionUserFilterInput {
+  id: ModelSubscriptionIDInput
+  country: ModelSubscriptionStringInput
+  email: ModelSubscriptionStringInput
+  name: ModelSubscriptionStringInput
+  isActive: ModelSubscriptionStringInput
+  and: [ModelSubscriptionUserFilterInput]
+  or: [ModelSubscriptionUserFilterInput]
+}
+
+type Subscription {
+  onCreateUser(filter: ModelSubscriptionUserFilterInput): User @aws_subscribe(mutations: ["createUser"])
+  onUpdateUser(filter: ModelSubscriptionUserFilterInput): User @aws_subscribe(mutations: ["updateUser"])
+  onDeleteUser(filter: ModelSubscriptionUserFilterInput): User @aws_subscribe(mutations: ["deleteUser"])
+  onCreateCatalog(filter: ModelSubscriptionCatalogFilterInput): Catalog @aws_subscribe(mutations: ["createCatalog"])
+  onUpdateCatalog(filter: ModelSubscriptionCatalogFilterInput): Catalog @aws_subscribe(mutations: ["updateCatalog"])
+  onDeleteCatalog(filter: ModelSubscriptionCatalogFilterInput): Catalog @aws_subscribe(mutations: ["deleteCatalog"])
+  onCreateCreditLine(filter: ModelSubscriptionCreditLineFilterInput): CreditLine @aws_subscribe(mutations: ["createCreditLine"])
+  onUpdateCreditLine(filter: ModelSubscriptionCreditLineFilterInput): CreditLine @aws_subscribe(mutations: ["updateCreditLine"])
+  onDeleteCreditLine(filter: ModelSubscriptionCreditLineFilterInput): CreditLine @aws_subscribe(mutations: ["deleteCreditLine"])
+}
+
+type ModelCatalogConnection {
+  items: [Catalog]!
+  nextToken: String
+}
+
+input ModelCatalogFilterInput {
+  id: ModelIDInput
+  type: ModelStringInput
+  country: ModelStringInput
+  code: ModelStringInput
+  description: ModelStringInput
+  parentId: ModelIDInput
+  and: [ModelCatalogFilterInput]
+  or: [ModelCatalogFilterInput]
+  not: ModelCatalogFilterInput
+}
+
+input ModelCatalogConditionInput {
+  type: ModelStringInput
+  country: ModelStringInput
+  code: ModelStringInput
+  description: ModelStringInput
+  parentId: ModelIDInput
+  and: [ModelCatalogConditionInput]
+  or: [ModelCatalogConditionInput]
+  not: ModelCatalogConditionInput
+}
+
+input CreateCatalogInput {
+  id: ID
+  type: String!
+  country: String
+  code: String
+  description: String!
+  parentId: ID
+}
+
+input UpdateCatalogInput {
+  id: ID!
+  type: String
+  country: String
+  code: String
+  description: String
+  parentId: ID
+}
+
+input DeleteCatalogInput {
+  id: ID!
+}
+
+input ModelSubscriptionCatalogFilterInput {
+  id: ModelSubscriptionIDInput
+  type: ModelSubscriptionStringInput
+  country: ModelSubscriptionStringInput
+  code: ModelSubscriptionStringInput
+  description: ModelSubscriptionStringInput
+  parentId: ModelSubscriptionIDInput
+  and: [ModelSubscriptionCatalogFilterInput]
+  or: [ModelSubscriptionCatalogFilterInput]
+}
+
+type ModelCreditLineConnection {
+  items: [CreditLine]!
+  nextToken: String
+}
+
+input ModelCreditLineFilterInput {
+  id: ModelIDInput
+  country: ModelStringInput
+  accountNumber: ModelStringInput
+  openingDate: ModelStringInput
+  dueDate: ModelStringInput
+  approvedAmount: ModelFloatInput
+  utilizedAmount: ModelFloatInput
+  userId: ModelIDInput
+  defaultUserId: ModelIDInput
+  isActive: ModelBooleanInput
+  and: [ModelCreditLineFilterInput]
+  or: [ModelCreditLineFilterInput]
+  not: ModelCreditLineFilterInput
+  creditLineRegionId: ModelIDInput
+  creditLineBranchOfficeId: ModelIDInput
+  creditLineBankingTypeId: ModelIDInput
+}
+
+input ModelCreditLineConditionInput {
+  country: ModelStringInput
+  accountNumber: ModelStringInput
+  openingDate: ModelStringInput
+  dueDate: ModelStringInput
+  approvedAmount: ModelFloatInput
+  utilizedAmount: ModelFloatInput
+  userId: ModelIDInput
+  defaultUserId: ModelIDInput
+  isActive: ModelBooleanInput
+  and: [ModelCreditLineConditionInput]
+  or: [ModelCreditLineConditionInput]
+  not: ModelCreditLineConditionInput
+  creditLineRegionId: ModelIDInput
+  creditLineBranchOfficeId: ModelIDInput
+  creditLineBankingTypeId: ModelIDInput
+}
+
+input CreateCreditLineInput {
+  id: ID
+  country: String!
+  accountNumber: String!
+  openingDate: AWSDate!
+  dueDate: AWSDate!
+  approvedAmount: Float!
+  utilizedAmount: Float!
+  userId: ID
+  defaultUserId: ID
+  isActive: Boolean
+  creditLineRegionId: ID
+  creditLineBranchOfficeId: ID
+  creditLineBankingTypeId: ID!
+}
+
+input UpdateCreditLineInput {
+  id: ID!
+  country: String
+  accountNumber: String
+  openingDate: AWSDate
+  dueDate: AWSDate
+  approvedAmount: Float
+  utilizedAmount: Float
+  userId: ID
+  defaultUserId: ID
+  isActive: Boolean
+  creditLineRegionId: ID
+  creditLineBranchOfficeId: ID
+  creditLineBankingTypeId: ID
+}
+
+input DeleteCreditLineInput {
+  id: ID!
+}
+
+input ModelSubscriptionCreditLineFilterInput {
+  id: ModelSubscriptionIDInput
+  country: ModelSubscriptionStringInput
+  accountNumber: ModelSubscriptionStringInput
+  openingDate: ModelSubscriptionStringInput
+  dueDate: ModelSubscriptionStringInput
+  approvedAmount: ModelSubscriptionFloatInput
+  utilizedAmount: ModelSubscriptionFloatInput
+  userId: ModelSubscriptionIDInput
+  defaultUserId: ModelSubscriptionIDInput
+  isActive: ModelSubscriptionBooleanInput
+  and: [ModelSubscriptionCreditLineFilterInput]
+  or: [ModelSubscriptionCreditLineFilterInput]
+}
+
+input ModelStringKeyConditionInput {
+  eq: String
+  le: String
+  lt: String
+  ge: String
+  gt: String
+  between: [String]
+  beginsWith: String
+}
+
+input ModelCatalogByTypeCompositeKeyConditionInput {
+  eq: ModelCatalogByTypeCompositeKeyInput
+  le: ModelCatalogByTypeCompositeKeyInput
+  lt: ModelCatalogByTypeCompositeKeyInput
+  ge: ModelCatalogByTypeCompositeKeyInput
+  gt: ModelCatalogByTypeCompositeKeyInput
+  between: [ModelCatalogByTypeCompositeKeyInput]
+  beginsWith: ModelCatalogByTypeCompositeKeyInput
+}
+
+input ModelCatalogByTypeCompositeKeyInput {
+  country: String
+  description: String
+}
+
