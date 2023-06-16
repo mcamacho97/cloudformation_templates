@@ -1,0 +1,132 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  Cloudformation template to create a VPC for Mombacho Wood
+Parameters:
+    0ptionalSuggestedStackName:
+        Type: String
+        Default: AWS-VPC-MW-Private-Resources-Stack
+        Description: Copy this parameter to use it like the stack name.
+    VPCName:
+      Type: String
+      Description: The name of the VPC
+      Default: vpc-mombacho-wood
+    VpcCidrBlock:
+      Type: String
+      Description: CIDR block for the VPC
+      AllowedPattern: (\d{1,3}\.){3}\d{1,3}/\d{1,2}
+      Default: 172.16.16.0/20
+    PrivateSubnetACidrBlock:
+      Type: String
+      Description: CIDR block for Private Subnet A
+      AllowedPattern: (\d{1,3}\.){3}\d{1,3}/\d{1,2}
+      Default: 172.16.21.0/24
+    PrivateSubnetBCidrBlock:
+      Type: String
+      Description: CIDR block for Private Subnet B
+      AllowedPattern: (\d{1,3}\.){3}\d{1,3}/\d{1,2}
+      Default: 172.16.22.0/24
+    PrivateSubnetCCidrBlock:
+      Type: String
+      Description: CIDR block for Private Subnet C
+      AllowedPattern: (\d{1,3}\.){3}\d{1,3}/\d{1,2}
+      Default: 172.16.23.0/24
+    PrivateSubnetAName:
+      Type: String
+      Description: The name of Private Subnet A
+      Default: mw-private-subnet-1
+    PrivateSubnetBName:
+      Type: String
+      Description: The name of Private Subnet B
+      Default: mw-private-subnet-2
+    PrivateSubnetCName:
+      Type: String
+      Description: The name of Private Subnet C
+      Default: mw-private-subnet-3
+    PrivateRouteTableName:
+      Type: String
+      Description: The name of RDS Route Table
+      Default: mw-private-routetable
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidrBlock
+      EnableDnsSupport: "true"
+      EnableDnsHostnames: "true"
+      Tags:
+        - Key: Name
+          Value: !Ref VPCName
+  SubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PrivateSubnetACidrBlock
+      AvailabilityZone: "us-east-1a"
+      Tags:
+      - Key: Name
+        Value: !Ref PrivateSubnetAName
+  SubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PrivateSubnetBCidrBlock
+      AvailabilityZone: "us-east-1a"
+      Tags:
+      - Key: Name
+        Value: !Ref PrivateSubnetBName
+  SubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PrivateSubnetCCidrBlock
+      AvailabilityZone: "us-east-1b"
+      Tags:
+      - Key: Name
+        Value: !Ref PrivateSubnetCName
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:  
+        Ref: VPC
+      Tags:
+      - Key: Name
+        Value: !Ref PrivateRouteTableName
+  SubnetAAssociationPrivateRouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref SubnetA
+  SubnetCAssociationPrivateRouteTable:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties: 
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref SubnetC
+Outputs:
+  VPCId:
+    Description: The ID of the VPC
+    Value: !Ref VPC
+    Export:
+      Name: 'VPCId'
+  VPCSG:
+    Description: The ID of the VPC Security Group
+    Value: !GetAtt VPC.DefaultSecurityGroup
+    Export:
+      Name: 'VPCSG'
+  SubnetA:
+    Description: The ID of the Subnet A
+    Value: !Ref SubnetA
+    Export:
+      Name: 'SubnetA'
+  SubnetB:
+    Description: The ID of the Subnet B
+    Value: !Ref SubnetB
+    Export:
+      Name: 'SubnetB'
+  SubnetC:
+    Description: The ID of the Subnet C
+    Value: !Ref SubnetC
+    Export:
+      Name: 'SubnetC'
+
+
+    

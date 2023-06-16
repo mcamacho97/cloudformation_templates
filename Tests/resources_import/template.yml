@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform:
+  - AWS::Serverless-2016-10-31
+Description: |
+  Cloudformation template to create a sample of resources imports
+Resources:
+  # ImportLambda:
+  #   Type: AWS::Lambda::Function
+  #   DeletionPolicy: Retain
+  #   Properties:
+  #     Runtime: python3.9
+  #     Role: arn:aws:iam::809489680864:role/service-role/getTransactionAPI-role-wm41cw9m
+  #     Handler: lambda_handler
+  #     Architectures:
+  #       - "x86_64"
+  #     Code:
+  #       S3Bucket: myawsbucket-809489680864
+  #       S3Key: lambda-deployment-package/getTransactionAPI/getTransactionAPI.zip
+  #     FunctionName: "getTransaction-CFN"
+  #     MemorySize: 128
+  #     EphemeralStorage:
+  #       Size: 512
+  #     PackageType: Zip
+  #     Timeout: 3
+
+  ImportGraphQLSchema:
+    Type: "AWS::AppSync::GraphQLSchema"
+    DeletionPolicy: Retain
+    Properties:
+      ApiId: "ld7jznsenjgdvnporcfo436llu"
+      DefinitionS3Location: "./schema.graphql"
