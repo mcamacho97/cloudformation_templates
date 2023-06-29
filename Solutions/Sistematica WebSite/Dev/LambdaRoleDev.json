@@ -5,22 +5,22 @@
   "Parameters": {
     "0ptionalSuggestedStackName": {
       "Type": "String",
-      "Default": "SalesforceConector-RolesAndPolicies-Stack",
+      "Default": "SIWebsite-RolesAndPolicies-Stack",
       "Description": "Copy this parameter to use it like the stack name."
     },
     "LambdaRoleName": {
       "Type": "String",
-      "Default": "BLRoleForLambdaAttachmentsBucketAccess",
+      "Default": "SIRoleForLambdaEdgeCloudfront",
       "Description": "Default Name For The Lambda Role"
     },
     "LambdaPolicyName": {
       "Type": "String",
-      "Default": "BLPolicyForLambdaAttachmentsBucketAccess",
+      "Default": "SIPolicyForLambdaEdgeCloudfront",
       "Description": "Default Name For The Lambda Policy"
     },
     "StageName": {
       "Type": "String",
-      "Default": "PROD",
+      "Default": "DEV",
       "Description": "Stage name to identify resources.",
       "AllowedValues": ["PROD", "DEV", "TEST"]
     }
@@ -30,14 +30,14 @@
       "Type": "AWS::IAM::Role",
       "Properties": {
         "RoleName": {
-          "Fn::Sub": "${StageName}-${StageName}"
+          "Fn::Sub": "${LambdaRoleName}-${StageName}"
         },
         "AssumeRolePolicyDocument": {
           "Version": "2012-10-17",
           "Statement": [
             {
               "Effect": "Allow",
-              "Principal": { "Service": ["lambda.amazonaws.com"] },
+              "Principal": { "Service": ["lambda.amazonaws.com","edgelambda.amazonaws.com"] },
               "Action": ["sts:AssumeRole"]
             }
           ]
@@ -45,28 +45,7 @@
         "ManagedPolicyArns": [
           "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
         ],
-        "Path": "/",
-        "Policies": [
-          {
-            "PolicyName": {
-              "Fn::Sub": "${LambdaPolicyName}"
-            },
-            "PolicyDocument": {
-              "Version": "2012-10-17",
-              "Statement": [
-                {
-                  "Action": ["s3:GetObject", "s3:PutObject"],
-                  "Resource": [
-                    {
-                      "Fn::Sub": "arn:aws:s3:::test/*"
-                    }
-                  ],
-                  "Effect": "Allow"
-                }
-              ]
-            }
-          }
-        ]
+        "Path": "/"
       }
     }
   },

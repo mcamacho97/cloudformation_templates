@@ -1,0 +1,163 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: 
+  Cloudformation template to deploy Website Sistemática
+Parameters:
+  0ptionalSuggestedStackName:
+      Type: String
+      Default: AWS-SI-Website-Resources-Stack
+      Description: Copy this parameter to use it like the stack name.
+  BucketName:
+    Type: String
+    Description: The bucket name to be created
+    AllowedPattern: (?!-)[a-zA-Z0-9-.]{1,63}(?<!-)
+    ConstraintDescription: must be a valid bucket name
+  StageName:
+    Type: String
+    Default: PROD
+    Description: Stage name to identify resources.
+    AllowedValues: ["PROD", "DEV", "TEST"]
+  DomainName:
+    Type: String
+    Description: The domain name to be associated with the certificate
+    AllowedPattern: (?!-)[a-zA-Z0-9-.]{1,63}(?<!-)
+    ConstraintDescription: must be a valid domain name.
+  HostedZoneId:
+    Type: String
+    Description: The hosted zone id
+    AllowedPattern: (?!-)[a-zA-Z0-9-.]{1,63}(?<!-)
+    ConstraintDescription: must be a valid domain name.
+  LambdaName:
+    Type: String
+    Default: CloudFrontLambdaEdge
+    Description: The bucket name to be created
+    ConstraintDescription: must be a valid bucket name
+
+Resources:
+  # Bucket S3
+  S3BucketWebsiteContent:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName
+      AccessControl: PublicRead
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - 'Authorization'
+              - 'Content-Length'
+            AllowedMethods:
+              - GET
+            AllowedOrigins:
+              - '*'
+            ExposedHeaders:
+              - '[]'
+            MaxAge: 3000
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+
+# Lambda Edge
+  LambdaFunctionExample:
+    Type: "AWS::Serverless::Function"
+    Properties:
+      FunctionName: !Sub ${StageName}-${LambdaName}
+      Description: Example of Function
+      Handler: index.lambda_handler
+      Runtime: python3.9
+      MemorySize: 128
+      Timeout: 5
+      Role:
+        Fn::ImportValue: !Sub LambdaRoleARNOutput-${StageName}
+      InlineCode: |
+        def lambda_handler(event, context):
+            print('event: ', event)
+            request = event['Records'][0]['cf']['request']
+            uri = request['uri']
+
+            if uri.endswith('/'):
+                request['uri'] += 'index.html'
+            elif '.' not in uri:
+                request['uri'] += '/index.html'
+
+            return request
+
+  # Hosted Zone, Certificate SSL and Domain Name
+  # Route53HostedZone: 
+  #   Type: "AWS::Route53::HostedZone"
+  #   Properties:
+  #     Name: !Ref HostedZoneId 
+  #     HostedZoneConfig: 
+  #       Comment: Public Host zoned for S3 website
+
+  # Certificate: 
+  #   Type: "AWS::CertificateManager::Certificate"
+  #   Properties: 
+  #     DomainName: !Ref DomainName
+  #     ValidationMethod: DNS
+  #     SubjectAlternativeNames:
+  #       - !Join ["", ["*.", !Ref DomainName]]
+
+  # # CDN
+  # CloudFrontDistribution:
+  #   Type: AWS::CloudFront::Distribution
+  #   Properties:
+  #     DistributionConfig:
+  #       Origins:
+  #         - Id: S3BucketOrigin
+  #           DomainName: sistematica.io.s3.amazonaws.com
+  #           S3OriginConfig: {}
+  #       Aliases:
+  #         - sistematica.io
+  #       ViewerCertificate:
+  #         AcmCertificateArn: !Ref Certificate
+  #         SslSupportMethod: sni-only
+  #       DefaultCacheBehavior:
+  #         TargetOriginId: S3BucketOrigin
+  #         ViewerProtocolPolicy: redirect-to-https
+  #         ForwardedValues:
+  #           QueryString: false
+  #           Cookies:
+  #             Forward: none
+  #       Enabled: true
+  # CloudFrontRecordSet:
+  #   Type: AWS::Route53::RecordSet
+  #   Properties:
+  #     Name: !Ref DomainName
+  #     Type: A
+  #     HostedZoneId: !Ref DomainName
+
+Outputs:
+  S3BucketSecureURL:
+    Value: !Join ["", ["https://", !GetAtt [S3BucketWebsiteContent, DomainName]]]
+    Description: Name of S3 bucket to hold website content
+  BucketName:
+    Value: !Ref "S3BucketWebsiteContent"
+    Description: Name of S3 bucket to hold website content
+  BucketEndpoint:
+    Value: !GetAtt S3BucketWebsiteContent.DomainName
+    Description: Endpoint of S3 bucket to hold website content
+  # NameServerOne:
+  #   Value: !Select [0, !GetAtt Route53HostedZone.NameServers]
+  #   Description: Name servers 1 for the newly created website
+  # NameServerTwo:
+  #   Value: !Select [1, !GetAtt Route53HostedZone.NameServers]
+  #   Description: Name servers 2 for the newly created website
+  # NameServerThree:
+  #   Value: !Select [2, !GetAtt Route53HostedZone.NameServers]
+  #   Description: Name servers 3 for the newly created website
+  # NameServerFour:
+  #   Value: !Select [3, !GetAtt Route53HostedZone.NameServers]
+  #   Description: Name servers 4 for the newly created website
+  # CertificateId:
+  #   Description: "The certificate ID"
+  #   Value: !Ref Certificate
+  # CloudfrontDomain:
+  #   Description: The domain name of the cloudfront distribution
+  #   Value: !GetAtt CloudFrontDistribution.DomainName

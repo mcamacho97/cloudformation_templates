@@ -6,24 +6,24 @@ Parameters:
         Type: String
         Default: AWS-Lambda-Resources-Stack
         Description: Copy this parameter to use it like the stack name.
-    AliasLambdaFunctionName:
+    StageName:
         Type: String
-        Default: dev
+        Default: DEV
         Description: Stage name to identify resources.
-        AllowedValues: ["prod", "dev", "test"]
+        AllowedValues: ["PROD", "DEV", "TEST"]
 
 Resources:
     LambdaFunctionExample:
         Type: AWS::Serverless::Function
         Properties:
-            FunctionName: !Sub LambdaFunctionExample-${AliasLambdaFunctionName}
+            FunctionName: !Sub LambdaFunctionExample-${StageName}
             Description: Example of Function
             Handler: index.lambda_handler
             Runtime: python3.9
             MemorySize: 128
             Timeout: 28
             Role:
-                Fn::ImportValue: !Sub LambdaRoleARNOutput-${AliasLambdaFunctionName}
+                Fn::ImportValue: !Sub LambdaRoleARNOutput-${StageName}
             Environment:
                 Variables:
                     EXAMPLE_VARIABLE: "EXAMPLE_VALUE"
